@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#2563eb">
   <title>TaskFlow — Ruang kerja tugasmu</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js" defer></script>
+  <script src="attachments.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -16,6 +19,8 @@
   <main class="page">
     <div class="page-heading"><div><p class="eyebrow">Ruang kerja / Ringkasan</p><h1>Semua pekerjaan, satu tempat.</h1><p>Kelola proyek dan selesaikan tugas selangkah demi selangkah.</p></div><button class="button primary" data-action="add-project" type="button"><span aria-hidden="true">＋</span> Proyek baru</button></div>
     <section aria-label="Ringkasan pekerjaan"><div id="stats" class="stats"></div></section>
+    <section id="legacy-import" class="legacy-import" hidden><span>Data dari versi sebelumnya ditemukan di browser ini.</span> <button type="button" class="button secondary" data-action="import-legacy">Impor data lama</button></section>
+    <section id="urgent-section" class="urgent" aria-live="polite" hidden></section>
     <div class="workspace">
       <aside class="projects panel" aria-labelledby="project-heading"><div class="panel-header"><div><h2 id="project-heading">Proyek</h2><p>Kelompokkan pekerjaanmu</p></div><button class="icon-button" data-action="add-project" aria-label="Tambah proyek" type="button">＋</button></div><div id="project-list"></div></aside>
       <section class="tasks" aria-labelledby="current-project"><div class="board-heading"><div><p class="eyebrow">Papan tugas</p><h2 id="current-project">Semua tugas</h2><p>Pantau progres pekerjaanmu di sini.</p></div><button class="button primary" data-action="add-task" type="button">＋ Tambah tugas</button></div>
@@ -25,8 +30,8 @@
     </div>
     <footer>TaskFlow <span>·</span> Fokus pada langkah berikutnya.</footer>
   </main>
-  <dialog id="project-dialog"><form id="project-form"><div class="dialog-header"><div><h2>Proyek baru</h2><p>Buat ruang untuk pekerjaanmu.</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Tutup">×</button></div><label>Nama proyek<input name="name" required maxlength="100" placeholder="Contoh: Acara kampus"></label><label>Deskripsi<textarea name="description" maxlength="500" rows="3" placeholder="Apa yang ingin kamu capai?"></textarea></label><label>Tenggat proyek<input name="deadline" type="date"></label><div class="dialog-actions"><button type="button" class="button secondary" data-action="close-dialog">Batal</button><button class="button primary" type="submit">Simpan proyek</button></div></form></dialog>
-  <dialog id="task-dialog"><form id="task-form"><div class="dialog-header"><div><h2>Tugas baru</h2><p>Mulai dari satu langkah kecil.</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Tutup">×</button></div><label>Proyek<select name="projectId" required></select></label><label>Judul tugas<input name="title" required maxlength="100" placeholder="Apa yang perlu dikerjakan?"></label><label>Deskripsi<textarea name="description" maxlength="500" rows="3" placeholder="Tambahkan detail jika diperlukan"></textarea></label><div class="form-row"><label>Tenggat<input name="deadline" type="date"></label><label>Status<select name="status"><option>To-do</option><option>In-Progress</option><option>Done</option></select></label></div><div class="dialog-actions"><button type="button" class="button secondary" data-action="close-dialog">Batal</button><button class="button primary" type="submit">Simpan tugas</button></div></form></dialog>
+  <dialog id="project-dialog"><form id="project-form"><div class="dialog-header"><div><h2>Proyek baru</h2><p>Buat ruang untuk pekerjaanmu.</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Tutup">×</button></div><label>Nama proyek<input name="name" required maxlength="100" placeholder="Contoh: Acara kampus"></label><label>Deskripsi<textarea name="description" maxlength="500" rows="3" placeholder="Apa yang ingin kamu capai?"></textarea></label><label>Tenggat proyek<input name="deadline" type="date"></label><label>Status proyek<select name="status"><option>Aktif</option><option>Tertunda</option><option>Selesai</option></select></label><div class="dialog-actions"><button type="button" class="button secondary" data-action="close-dialog">Batal</button><button class="button primary" type="submit">Simpan proyek</button></div></form></dialog>
+  <dialog id="task-dialog"><form id="task-form"><div class="dialog-header"><div><h2>Tugas baru</h2><p>Mulai dari satu langkah kecil.</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Tutup">×</button></div><label>Proyek<select name="projectId" required></select></label><label>Judul tugas<input name="title" required maxlength="100" placeholder="Apa yang perlu dikerjakan?"></label><label>Deskripsi<textarea name="description" maxlength="500" rows="3" placeholder="Tambahkan detail jika diperlukan"></textarea></label><div class="form-row"><label>Tenggat<input name="deadline" type="date"></label><label>Status<select name="status"><option>To-do</option><option>In-Progress</option><option>Done</option></select></label></div><label>Lampiran (maks. 5 MB)<input name="attachment" type="file"><span id="attachment-info" class="help-text"></span></label><div class="dialog-actions"><button type="button" class="button secondary" data-action="close-dialog">Batal</button><button class="button primary" type="submit">Simpan tugas</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
