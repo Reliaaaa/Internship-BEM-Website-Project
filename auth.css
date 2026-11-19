@@ -2,3 +2,4 @@
 .password-field{display:grid;gap:6px}.password-control{position:relative}.password-control input{padding-right:108px}.password-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);min-height:36px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--accent);font-size:12px;font-weight:600}.password-toggle:hover{background:var(--accent-soft)}
 .auth-card{padding:36px}.auth-card h1{line-height:1.2;letter-spacing:-.035em;text-wrap:balance}.auth-intro{line-height:1.6}.auth-tabs button{min-height:44px}.auth-disclaimer{line-height:1.6}.password-toggle{min-height:40px}.auth-submit{min-height:46px}@media(max-width:640px){.auth-view{padding:16px}.auth-card{padding:24px}}
 [data-theme=dark] .password-toggle,[data-theme=dark] .auth-tabs button[aria-selected=true]{color:#bfdbfe}[data-theme=dark] .auth-error{color:#fca5a5}
+.auth-view{background:transparent}
