@@ -57,6 +57,10 @@ window.TaskFlowAuth = (() => {
     if (!user) { form.reset(); setMode(false); }
     onSession(user);
   }
+  function logout() {
+    try { localStorage.removeItem(sessionKey); showSession(null); return true; }
+    catch { return false; }
+  }
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
@@ -113,7 +117,7 @@ window.TaskFlowAuth = (() => {
     registerTab = view.querySelector('#auth-register-tab');
     account = document.createElement('div');
     account.className = 'auth-account';
-    account.innerHTML = '<span class="auth-user"></span><button class="button secondary" type="button">Keluar</button>';
+    account.innerHTML = '<span class="auth-user"></span><button class="button logout-button" data-action="logout" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg><span>Keluar</span></button>';
     document.querySelector('.header-actions').append(account);
     loginTab.addEventListener('click', () => setMode(false));
     registerTab.addEventListener('click', () => setMode(true));
@@ -123,9 +127,6 @@ window.TaskFlowAuth = (() => {
       event.currentTarget.textContent = visible ? 'Sembunyikan' : 'Tampilkan';
       event.currentTarget.setAttribute('aria-label', `${visible ? 'Sembunyikan' : 'Tampilkan'} kata sandi`);
     });
-    account.querySelector('button').addEventListener('click', () => {
-      try { localStorage.removeItem(sessionKey); showSession(null); } catch { message.textContent = 'Tidak dapat keluar. Periksa penyimpanan browser.'; }
-    });
     form.addEventListener('submit', submit);
     try { showSession(readSession()); } catch { showSession(null); message.textContent = 'Data akun tidak dapat dibaca. Periksa penyimpanan browser.'; }
     window.addEventListener('storage', (event) => {
@@ -133,5 +134,5 @@ window.TaskFlowAuth = (() => {
       try { const user = readSession(); if (user?.id !== current?.id) showSession(user); } catch { showSession(null); }
     });
   }
-  return { start };
+  return { start, logout };
 })();
