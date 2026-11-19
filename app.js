@@ -68,8 +68,9 @@ function dateLabel(value) {
 function renderStats() {
   stats.replaceChildren();
   const entries = [['Total proyek', projects.length], ...statuses.map((status) => [status, tasks.filter((task) => task.status === status).length])];
-  for (const [label, count] of entries) {
+  for (const [index, [label, count]] of entries.entries()) {
     const card = make('div', 'stat-card');
+    card.dataset.stat = ['projects', 'todo', 'progress', 'done'][index];
     card.append(make('span', 'stat-label', label), make('strong', 'stat-value', String(count)));
     stats.append(card);
   }
@@ -85,25 +86,40 @@ function renderProjects() {
     select.setAttribute('aria-pressed', String(selectedProject === project.id));
     const count = tasks.filter((task) => task.projectId === project.id);
     const meta = make('span', 'project-meta', `${project.status || 'Aktif'} · ${count.filter((task) => task.status === 'Done').length}/${count.length} selesai`);
+    const completed = count.filter((task) => task.status === 'Done').length;
+    const progress = document.createElement('progress');
+    progress.className = 'project-progress';
+    progress.max = 100;
+    progress.value = count.length ? Math.round(completed / count.length * 100) : 0;
+    progress.setAttribute('aria-label', `Progres ${project.name}: ${progress.value}%`);
     const buttons = make('div', 'project-actions');
-    buttons.append(action('Ubah', 'edit-project', project.id), action('Hapus', 'delete-project', project.id));
-    item.append(select, meta, buttons);
+    const edit = action('Ubah', 'edit-project', project.id);
+    const remove = action('Hapus', 'delete-project', project.id);
+    edit.setAttribute('aria-label', `Ubah proyek ${project.name}`);
+    remove.setAttribute('aria-label', `Hapus proyek ${project.name}`);
+    buttons.append(edit, remove);
+    item.append(select, meta, buttons, progress);
     projectList.append(item);
   }
-  if (!projects.length) projectList.append(make('p', 'empty-state', 'Belum ada proyek. Tambahkan proyek pertamamu.'));
+  if (!projects.length) {
+    const empty = make('div', 'empty-state');
+    empty.append(make('strong', '', 'Mulai proyek pertama'), make('p', '', 'Buat proyek untuk mengelompokkan tugasmu.'), action('Tambah proyek', 'add-project', '', 'empty-action'));
+    projectList.append(empty);
+  }
   currentProject.textContent = projects.find((p) => p.id === selectedProject)?.name || 'Semua proyek';
 }
 function renderBoard() {
   const query = search.value.trim().toLocaleLowerCase('id');
   const visible = tasks.filter((task) => (!selectedProject || task.projectId === selectedProject) && (statusFilter.value === 'ALL' || !statusFilter.value || task.status === statusFilter.value) && `${task.title} ${task.description || ''}`.toLocaleLowerCase('id').includes(query));
   board.replaceChildren();
-  for (const status of statuses) {
+  for (const [index, status] of statuses.entries()) {
     const column = make('section', 'kanban-column');
+    column.dataset.status = ['todo', 'progress', 'done'][index];
     const matching = visible.filter((task) => task.status === status);
     const header = make('div', 'kanban-header');
     header.append(make('h3', '', status), make('span', 'count-badge', String(matching.length)));
     column.append(header);
-    if (!matching.length) column.append(make('p', 'empty-state', 'Belum ada tugas di sini.'));
+    if (!matching.length) column.append(make('p', 'empty-state', query || statusFilter.value !== 'ALL' ? 'Tidak ada tugas yang cocok.' : 'Belum ada tugas di tahap ini.'));
     for (const task of matching) {
       const card = make('article', 'task-card');
       card.append(make('h4', '', task.title));
@@ -122,7 +138,11 @@ function renderBoard() {
         option.selected = optionStatus === task.status;
         move.append(option);
       }
-      controls.append(move, action('Ubah', 'edit-task', task.id), action('Hapus', 'delete-task', task.id));
+      const edit = action('Ubah', 'edit-task', task.id);
+      const remove = action('Hapus', 'delete-task', task.id);
+      edit.setAttribute('aria-label', `Ubah tugas ${task.title}`);
+      remove.setAttribute('aria-label', `Hapus tugas ${task.title}`);
+      controls.append(move, edit, remove);
       card.append(controls);
       column.append(card);
     }
