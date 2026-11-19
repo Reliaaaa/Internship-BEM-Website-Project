@@ -17,5 +17,6 @@ jobs:
           node --check app.js
           node --check auth.js
           node --check attachments.js
+          node --check smooth-scroll.js
       - name: Uji batas lampiran
         run: node --test tests/*.test.cjs
