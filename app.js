@@ -25,8 +25,9 @@ function load(key) {
     return [];
   }
 }
-let projects = load('tf_projects');
-let tasks = load('tf_tasks');
+let activeUser = null;
+let projects = [];
+let tasks = [];
 
 function notify(message) {
   toast.textContent = message;
@@ -36,8 +37,8 @@ function notify(message) {
 }
 function save() {
   try {
-    localStorage.setItem('tf_projects', JSON.stringify(projects));
-    localStorage.setItem('tf_tasks', JSON.stringify(tasks));
+    if (!activeUser) throw new Error('Sesi tidak tersedia');
+    localStorage.setItem(`tf_workspace_${activeUser.id}`, JSON.stringify({ projects, tasks }));
     return true;
   } catch {
     notify('Penyimpanan tidak tersedia. Perubahan mungkin tidak tersimpan.');
@@ -83,7 +84,7 @@ function renderProjects() {
     const select = action(project.name, 'select-project', project.id, 'project-button');
     select.setAttribute('aria-pressed', String(selectedProject === project.id));
     const count = tasks.filter((task) => task.projectId === project.id);
-    const meta = make('span', 'project-meta', `${count.filter((task) => task.status === 'Done').length}/${count.length} selesai`);
+    const meta = make('span', 'project-meta', `${project.status || 'Aktif'} · ${count.filter((task) => task.status === 'Done').length}/${count.length} selesai`);
     const buttons = make('div', 'project-actions');
     buttons.append(action('Ubah', 'edit-project', project.id), action('Hapus', 'delete-project', project.id));
     item.append(select, meta, buttons);
@@ -109,6 +110,7 @@ function renderBoard() {
       if (task.description) card.append(make('p', 'task-description', task.description));
       const project = projects.find((p) => p.id === task.projectId);
       card.append(make('p', 'task-meta', `${project?.name || 'Proyek'} · ${dateLabel(task.deadline)}`));
+      if (task.attachmentId) card.append(action(`Unduh: ${task.attachmentName}`, 'download-attachment', task.id, 'attachment-link'));
       const controls = make('div', 'task-actions');
       const move = make('select', 'task-status');
       move.dataset.action = 'move-task';
@@ -127,13 +129,29 @@ function renderBoard() {
     board.append(column);
   }
 }
-function render() { renderStats(); renderProjects(); renderBoard(); }
+function renderUrgent() {
+  const section = $('#urgent-section');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const limit = new Date(today);
+  limit.setDate(limit.getDate() + 3);
+  const urgent = tasks.filter((task) => task.status !== 'Done' && task.deadline && new Date(`${task.deadline}T00:00:00`) <= limit).sort((a, b) => a.deadline.localeCompare(b.deadline));
+  section.replaceChildren();
+  section.hidden = !urgent.length;
+  if (urgent.length) {
+    section.append(make('strong', '', `${urgent.length} tugas mendekati atau melewati tenggat`));
+    const list = make('ul');
+    for (const task of urgent) list.append(make('li', '', `${task.title} — ${dateLabel(task.deadline)}`));
+    section.append(list);
+  }
+}
+function render() { renderStats(); renderProjects(); renderBoard(); renderUrgent(); }
 
 function openProject(project = null) {
   editingProject = project?.id || null;
   projectForm.reset();
   projectForm.querySelector('h2').textContent = project ? 'Ubah proyek' : 'Proyek baru';
-  if (project) for (const key of ['name', 'description', 'deadline']) setValue(projectForm, key, project[key]);
+  if (project) for (const key of ['name', 'description', 'deadline', 'status']) setValue(projectForm, key, project[key]);
   projectDialog.showModal();
 }
 function openTask(task = null) {
@@ -141,6 +159,7 @@ function openTask(task = null) {
   editingTask = task?.id || null;
   taskForm.reset();
   taskForm.querySelector('h2').textContent = task ? 'Ubah tugas' : 'Tugas baru';
+  $('#attachment-info').textContent = task?.attachmentName ? `Lampiran saat ini: ${task.attachmentName}. Pilih berkas baru untuk mengganti.` : 'Opsional. Berkas disimpan di browser ini.';
   const projectSelect = taskForm.elements.namedItem('projectId');
   projectSelect.replaceChildren();
   for (const project of projects) {
@@ -156,13 +175,16 @@ projectForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const name = formValue(projectForm, 'name');
   if (!name) { notify('Nama proyek wajib diisi.'); return; }
-  const values = { name, description: formValue(projectForm, 'description'), deadline: formValue(projectForm, 'deadline') };
-  if (editingProject) Object.assign(projects.find((p) => p.id === editingProject), values);
-  else { const project = { id: crypto.randomUUID(), ...values, status: 'Aktif' }; projects.push(project); selectedProject = project.id; }
-  const persisted = save(); render(); projectDialog.close();
-  if (persisted) notify(editingProject ? 'Proyek diperbarui.' : 'Proyek ditambahkan.');
+  const values = { name, description: formValue(projectForm, 'description'), deadline: formValue(projectForm, 'deadline'), status: formValue(projectForm, 'status') };
+  const previous = projects;
+  const previousSelection = selectedProject;
+  if (editingProject) projects = projects.map((project) => project.id === editingProject ? { ...project, ...values } : project);
+  else { const project = { id: crypto.randomUUID(), ...values }; projects = [...projects, project]; selectedProject = project.id; }
+  if (!save()) { projects = previous; selectedProject = previousSelection; return; }
+  render(); projectDialog.close();
+  notify(editingProject ? 'Proyek diperbarui.' : 'Proyek ditambahkan.');
 });
-taskForm.addEventListener('submit', (event) => {
+taskForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const title = formValue(taskForm, 'title');
   const status = formValue(taskForm, 'status');
@@ -170,27 +192,64 @@ taskForm.addEventListener('submit', (event) => {
   const projectId = formValue(taskForm, 'projectId');
   if (!projects.some((project) => project.id === projectId)) { notify('Pilih proyek yang tersedia.'); return; }
   const values = { projectId, title, description: formValue(taskForm, 'description'), deadline: formValue(taskForm, 'deadline'), status };
-  if (editingTask) Object.assign(tasks.find((t) => t.id === editingTask), values);
-  else tasks.push({ id: crypto.randomUUID(), ...values });
-  const persisted = save(); render(); taskDialog.close();
-  if (persisted) notify(editingTask ? 'Tugas diperbarui.' : 'Tugas ditambahkan.');
+  const file = taskForm.elements.namedItem('attachment').files[0];
+  const previous = tasks.slice();
+  const userAtSubmit = activeUser?.id;
+  const oldTask = tasks.find((task) => task.id === editingTask);
+  const submit = taskForm.querySelector('[type="submit"]');
+  submit.disabled = true;
+  let uploaded;
+  try {
+    if (file) uploaded = await TaskFlowAttachments.save(file);
+    if (activeUser?.id !== userAtSubmit) { if (uploaded) await TaskFlowAttachments.removeMany([uploaded.id]); return; }
+    const attachment = uploaded ? { attachmentId: uploaded.id, attachmentName: uploaded.name } : {};
+    if (oldTask) tasks = tasks.map((task) => task.id === editingTask ? { ...task, ...values, ...attachment } : task);
+    else tasks = [...tasks, { id: crypto.randomUUID(), ...values, ...attachment }];
+    if (!save()) { tasks = previous; if (uploaded) await TaskFlowAttachments.removeMany([uploaded.id]); return; }
+    render(); taskDialog.close();
+    notify(editingTask ? 'Tugas diperbarui.' : 'Tugas ditambahkan.');
+    if (uploaded && oldTask?.attachmentId) await TaskFlowAttachments.removeMany([oldTask.attachmentId]);
+  } catch (error) { notify(error.message || 'Lampiran tidak dapat disimpan.'); }
+  finally { submit.disabled = false; }
 });
-document.addEventListener('click', (event) => {
+document.addEventListener('click', async (event) => {
   const target = event.target.closest('[data-action]');
   if (!target || target.tagName === 'SELECT') return;
   const id = target.dataset.id;
   switch (target.dataset.action) {
     case 'add-project': openProject(); break;
     case 'add-task': openTask(); break;
+    case 'import-legacy': {
+      if (projects.length || tasks.length || !confirm('Salin proyek dan tugas lama ke akun ini? Data lama tetap disimpan.')) break;
+      const oldProjects = load('tf_projects');
+      const ids = new Set(oldProjects.map((project) => project.id));
+      projects = oldProjects;
+      tasks = load('tf_tasks').filter((task) => ids.has(task.projectId));
+      if (!save()) { projects = []; tasks = []; break; }
+      $('#legacy-import').hidden = true;
+      render(); notify('Data lama disalin ke akun ini.');
+      break;
+    }
     case 'close-dialog': target.closest('dialog')?.close(); break;
     case 'select-project': selectedProject = id || null; render(); break;
     case 'edit-project': { const project = projects.find((p) => p.id === id); if (project) openProject(project); break; }
     case 'edit-task': { const task = tasks.find((t) => t.id === id); if (task) openTask(task); break; }
+    case 'download-attachment': {
+      const task = tasks.find((item) => item.id === id);
+      try {
+        const attachment = task?.attachmentId && await TaskFlowAttachments.get(task.attachmentId);
+        if (!attachment) throw new Error('Lampiran tidak ditemukan.');
+        const url = URL.createObjectURL(attachment.blob);
+        const link = document.createElement('a'); link.href = url; link.download = attachment.name; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (error) { notify(error.message || 'Lampiran tidak dapat diunduh.'); }
+      break;
+    }
     case 'delete-project':
-      if (confirm('Hapus proyek dan semua tugas di dalamnya?')) { projects = projects.filter((p) => p.id !== id); tasks = tasks.filter((t) => t.projectId !== id); if (selectedProject === id) selectedProject = null; const persisted = save(); render(); if (persisted) notify('Proyek dihapus.'); }
+      if (confirm('Hapus proyek dan semua tugas di dalamnya?')) { const oldProjects = projects; const oldTasks = tasks; const removed = tasks.filter((task) => task.projectId === id); projects = projects.filter((p) => p.id !== id); tasks = tasks.filter((t) => t.projectId !== id); if (!save()) { projects = oldProjects; tasks = oldTasks; break; } if (selectedProject === id) selectedProject = null; render(); try { await TaskFlowAttachments.removeMany(removed.map((task) => task.attachmentId)); notify('Proyek dihapus.'); } catch { notify('Proyek dihapus, tetapi lampiran belum dapat dibersihkan.'); } }
       break;
     case 'delete-task':
-      if (confirm('Hapus tugas ini?')) { tasks = tasks.filter((t) => t.id !== id); const persisted = save(); render(); if (persisted) notify('Tugas dihapus.'); }
+      if (confirm('Hapus tugas ini?')) { const oldTasks = tasks; const removed = tasks.find((task) => task.id === id); tasks = tasks.filter((t) => t.id !== id); if (!save()) { tasks = oldTasks; break; } render(); try { await TaskFlowAttachments.removeMany([removed?.attachmentId]); notify('Tugas dihapus.'); } catch { notify('Tugas dihapus, tetapi lampiran belum dapat dibersihkan.'); } }
       break;
   }
 });
@@ -214,4 +273,19 @@ themeToggle.addEventListener('click', () => {
   setTheme(theme);
   try { localStorage.setItem('tf_theme', theme); } catch { notify('Preferensi tema tidak dapat disimpan.'); }
 });
-render();
+TaskFlowAuth.start((user) => {
+  if (projectDialog.open) projectDialog.close();
+  if (taskDialog.open) taskDialog.close();
+  activeUser = user;
+  selectedProject = null;
+  projects = []; tasks = [];
+  if (user) {
+    try {
+      const data = JSON.parse(localStorage.getItem(`tf_workspace_${user.id}`) || '{}');
+      projects = Array.isArray(data.projects) ? data.projects : [];
+      tasks = Array.isArray(data.tasks) ? data.tasks : [];
+    } catch { notify('Data tidak dapat dibaca.'); }
+  }
+  $('#legacy-import').hidden = !user || projects.length > 0 || tasks.length > 0 || !load('tf_projects').length;
+  render();
+});
