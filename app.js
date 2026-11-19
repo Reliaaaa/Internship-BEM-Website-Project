@@ -154,22 +154,21 @@ function renderBoard() {
       card.append(make('p', 'task-meta', `${project?.name || 'Proyek'} · ${dateLabel(task.deadline)}`));
       if (task.attachmentId) card.append(action(`Unduh: ${task.attachmentName}`, 'download-attachment', task.id, 'attachment-link'));
       const controls = make('div', 'task-actions');
-      const move = make('select', 'task-status');
-      move.dataset.action = 'move-task';
-      move.dataset.id = task.id;
-      move.setAttribute('aria-label', `Ubah status ${task.title}`);
+      const move = make('div', 'task-status-options');
+      move.setAttribute('role', 'group');
+      move.setAttribute('aria-label', `Status tugas ${task.title}`);
       for (const optionStatus of statuses) {
-        const option = make('option', '', optionStatus);
-        option.value = optionStatus;
-        option.selected = optionStatus === task.status;
+        const option = action(optionStatus, 'move-task', task.id, 'task-status-option');
+        option.dataset.status = optionStatus;
+        option.setAttribute('aria-pressed', String(optionStatus === task.status));
         move.append(option);
       }
       const edit = action('Ubah', 'edit-task', task.id);
       const remove = action('Hapus', 'delete-task', task.id);
       edit.setAttribute('aria-label', `Ubah tugas ${task.title}`);
       remove.setAttribute('aria-label', `Hapus tugas ${task.title}`);
-      controls.append(move, edit, remove);
-      card.append(controls);
+      controls.append(edit, remove);
+      card.append(move, controls);
       column.append(card);
     }
     board.append(column);
@@ -278,6 +277,19 @@ document.addEventListener('click', async (event) => {
     }
     case 'close-dialog': target.closest('dialog')?.close(); break;
     case 'select-project': selectedProject = id || null; render(); break;
+    case 'move-task': {
+      const task = tasks.find((item) => item.id === id);
+      const status = target.dataset.status;
+      if (!task || !statuses.includes(status) || task.status === status) break;
+      const previous = task.status;
+      task.status = status;
+      if (!save()) { task.status = previous; break; }
+      render();
+      const selected = [...board.querySelectorAll('[data-action="move-task"]')].find((button) => button.dataset.id === id && button.dataset.status === status);
+      selected?.focus({ preventScroll: true });
+      notify(`Status tugas diubah ke ${status}.`);
+      break;
+    }
     case 'edit-project': { const project = projects.find((p) => p.id === id); if (project) openProject(project); break; }
     case 'edit-task': { const task = tasks.find((t) => t.id === id); if (task) openTask(task); break; }
     case 'download-attachment': {
@@ -298,11 +310,6 @@ document.addEventListener('click', async (event) => {
       if (confirm('Hapus tugas ini?')) { const oldTasks = tasks; const removed = tasks.find((task) => task.id === id); tasks = tasks.filter((t) => t.id !== id); if (!save()) { tasks = oldTasks; break; } render(); try { await TaskFlowAttachments.removeMany([removed?.attachmentId]); notify('Tugas dihapus.'); } catch { notify('Tugas dihapus, tetapi lampiran belum dapat dibersihkan.'); } }
       break;
   }
-});
-document.addEventListener('change', (event) => {
-  if (event.target.dataset.action !== 'move-task') return;
-  const task = tasks.find((item) => item.id === event.target.dataset.id);
-  if (task && statuses.includes(event.target.value)) { task.status = event.target.value; const persisted = save(); render(); if (persisted) notify('Status tugas diperbarui.'); }
 });
 search.addEventListener('input', renderBoard);
 statusFilter.addEventListener('change', renderBoard);
