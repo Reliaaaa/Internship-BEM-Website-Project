@@ -11,6 +11,9 @@ const statusFilter = $('#status-filter');
 const themeToggle = $('#theme-toggle');
 const toast = $('#toast');
 const currentProject = $('#current-project');
+const profileDialog = $('#profile-dialog');
+const islandToggle = $('.island-toggle');
+const islandMenu = $('#island-menu');
 const statuses = ['To-do', 'In-Progress', 'Done'];
 // Lucide icons, ISC licensed; see assets/lucide/LICENSE.
 const statIcons = [
@@ -23,6 +26,27 @@ let selectedProject = null;
 let editingProject = null;
 let editingTask = null;
 let toastTimer;
+
+function setIsland(open) {
+  islandMenu.hidden = !open;
+  islandToggle.setAttribute('aria-expanded', String(open));
+  islandToggle.setAttribute('aria-label', open ? 'Tutup navigasi cepat' : 'Buka navigasi cepat');
+}
+islandToggle.addEventListener('click', () => setIsland(islandMenu.hidden));
+profileDialog.addEventListener('close', () => {
+  if (!document.body.classList.contains('auth-locked')) islandToggle.focus({ preventScroll: true });
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !islandMenu.hidden) { setIsland(false); islandToggle.focus(); }
+});
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.island') && !islandMenu.hidden) setIsland(false);
+});
+function navigateTo(element) {
+  setIsland(false);
+  element.focus({ preventScroll: true });
+  element.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
 
 function load(key) {
   try {
@@ -287,6 +311,11 @@ document.addEventListener('click', async (event) => {
     }
     case 'close-dialog': target.closest('dialog')?.close(); break;
     case 'select-project': selectedProject = id || null; render(); break;
+    case 'navigate-projects': selectedProject = null; render(); navigateTo($('#overview-heading')); break;
+    case 'navigate-tasks': navigateTo(currentProject); break;
+    case 'navigate-profile':
+      if (activeUser) { $('#profile-name').textContent = activeUser.name; $('#profile-email').textContent = activeUser.email; setIsland(false); profileDialog.showModal(); }
+      break;
     case 'move-task': {
       const task = tasks.find((item) => item.id === id);
       const status = target.dataset.status;
@@ -339,6 +368,8 @@ themeToggle.addEventListener('click', () => {
 TaskFlowAuth.start((user) => {
   if (projectDialog.open) projectDialog.close();
   if (taskDialog.open) taskDialog.close();
+  if (profileDialog.open) profileDialog.close();
+  setIsland(false);
   activeUser = user;
   selectedProject = null;
   projects = []; tasks = [];
