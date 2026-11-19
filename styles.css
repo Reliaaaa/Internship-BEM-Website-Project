@@ -31,3 +31,20 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}dialog label{font-size:14p
 @media(max-width:640px){.page{padding-top:24px}.page-heading,.board-heading{gap:16px}.page-heading .button,.board-heading .button{width:100%}.stats{margin:24px 0}.stat-card{min-height:100px;padding:16px 16px 16px 20px}.projects{padding:16px}.workspace{gap:28px}.task-actions{gap:6px}.project-actions button,.task-actions button{min-height:44px}.toast{left:16px;right:16px;bottom:16px}.form-row{grid-template-columns:1fr}}
 [data-theme=dark] .eyebrow,[data-theme=dark] .project-button[aria-pressed=true],[data-theme=dark] .empty-action,[data-theme=dark] .task-card .attachment-link{color:#bfdbfe!important}
 .primary{background:#1d4ed8}
+@font-face{font-family:'DM Sans';src:url('assets/fonts/DM-Sans-Variable.ttf') format('truetype');font-style:normal;font-weight:100 1000;font-display:swap}
+body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+@media(prefers-reduced-motion:no-preference){
+  :root{scroll-behavior:smooth;--motion-ease:cubic-bezier(.22,1,.36,1)}
+  .page-heading,.stats,.workspace,.auth-card{animation:surface-arrive .55s var(--motion-ease) both}
+  .stats{animation-delay:.04s}.workspace{animation-delay:.08s}
+  dialog[open]{animation:dialog-arrive .32s var(--motion-ease) both}
+  dialog[open]::backdrop{animation:backdrop-arrive .24s ease-out both}
+  .toast:not([hidden]):not(:empty){animation:toast-arrive .3s var(--motion-ease) both}
+  .topbar,.stat-card,.panel,.kanban-column,.task-card,.auth-card,dialog,input,textarea,select{transition:background-color .28s ease,border-color .28s ease,color .28s ease,box-shadow .28s ease}
+  .button,.icon-button,.project-button,.project-actions button,.task-actions button,.empty-action{transition:background-color .22s ease,color .22s ease,border-color .22s ease,filter .22s ease,transform .25s var(--motion-ease)}
+  @keyframes surface-arrive{from{opacity:.75;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes dialog-arrive{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes backdrop-arrive{from{opacity:0}to{opacity:1}}
+  @keyframes toast-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){.button:hover,.icon-button:hover{transform:translateY(-2px)}.button:active,.icon-button:active{transform:translateY(0)}}
