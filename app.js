@@ -26,13 +26,16 @@ let selectedProject = null;
 let editingProject = null;
 let editingTask = null;
 let toastTimer;
+let projectAnimation;
+let projectTransition = 0;
 
 function setIsland(open) {
-  islandMenu.hidden = !open;
+  islandMenu.inert = !open;
+  islandMenu.setAttribute('aria-hidden', String(!open));
   islandToggle.setAttribute('aria-expanded', String(open));
   islandToggle.setAttribute('aria-label', open ? 'Tutup navigasi cepat' : 'Buka navigasi cepat');
 }
-islandToggle.addEventListener('click', () => setIsland(islandMenu.hidden));
+islandToggle.addEventListener('click', () => setIsland(islandToggle.getAttribute('aria-expanded') !== 'true'));
 $('.island').addEventListener('focusout', (event) => {
   if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setIsland(false);
 });
@@ -40,15 +43,43 @@ profileDialog.addEventListener('close', () => {
   if (!document.body.classList.contains('auth-locked')) islandToggle.focus({ preventScroll: true });
 });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !islandMenu.hidden) { setIsland(false); islandToggle.focus(); }
+  if (event.key === 'Escape' && islandToggle.getAttribute('aria-expanded') === 'true') { setIsland(false); islandToggle.focus(); }
 });
 document.addEventListener('click', (event) => {
-  if (!event.target.closest('.island') && !islandMenu.hidden) setIsland(false);
+  if (!event.target.closest('.island') && islandToggle.getAttribute('aria-expanded') === 'true') setIsland(false);
 });
 function navigateTo(element) {
   setIsland(false);
   element.focus({ preventScroll: true });
   element.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
+function cancelProjectTransition() {
+  projectTransition += 1;
+  projectAnimation?.cancel();
+  projectAnimation = undefined;
+}
+async function selectProject(id) {
+  if (id === selectedProject && !projectAnimation) return;
+  cancelProjectTransition();
+  const token = projectTransition;
+  const panel = $('.tasks');
+  const restoreFocus = document.activeElement?.dataset.action === 'select-project';
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced && panel.animate) {
+    projectAnimation = panel.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0.2, transform: 'translateY(6px)' }], { duration: 120, easing: 'ease-in', fill: 'forwards' });
+    try { await projectAnimation.finished; } catch { return; }
+    if (token !== projectTransition) return;
+  }
+  selectedProject = id;
+  render();
+  if (restoreFocus) [...projectList.querySelectorAll('[data-action="select-project"]')].find((button) => (button.dataset.id || null) === id)?.focus({ preventScroll: true });
+  projectAnimation?.cancel();
+  projectAnimation = undefined;
+  if (!reduced && panel.animate) {
+    const animation = panel.animate([{ opacity: 0.2, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 300, easing: 'cubic-bezier(.22,1,.36,1)' });
+    projectAnimation = animation;
+    animation.finished.then(() => { if (projectAnimation === animation) projectAnimation = undefined; }).catch(() => {});
+  }
 }
 
 function load(key) {
@@ -313,8 +344,8 @@ document.addEventListener('click', async (event) => {
       break;
     }
     case 'close-dialog': target.closest('dialog')?.close(); break;
-    case 'select-project': selectedProject = id || null; render(); break;
-    case 'navigate-projects': selectedProject = null; render(); navigateTo($('#overview-heading')); break;
+    case 'select-project': await selectProject(id || null); break;
+    case 'navigate-projects': cancelProjectTransition(); selectedProject = null; render(); navigateTo($('#overview-heading')); break;
     case 'navigate-tasks': navigateTo(currentProject); break;
     case 'navigate-profile':
       if (activeUser) { $('#profile-name').textContent = activeUser.name; $('#profile-email').textContent = activeUser.email; setIsland(false); profileDialog.showModal(); }
@@ -369,6 +400,7 @@ themeToggle.addEventListener('click', () => {
   try { localStorage.setItem('tf_theme', theme); } catch { notify('Preferensi tema tidak dapat disimpan.'); }
 });
 TaskFlowAuth.start((user) => {
+  cancelProjectTransition();
   if (projectDialog.open) projectDialog.close();
   if (taskDialog.open) taskDialog.close();
   if (profileDialog.open) profileDialog.close();
