@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>TaskFlow — Ruang kerja tugasmu</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>TaskFlow<small>Ruang kerja pribadi</small></span></div>
+    <div class="header-actions"><span class="local-note"><span class="online-dot"></span> Disimpan di perangkat ini</span><button id="theme-toggle" class="icon-button" type="button" aria-label="Ganti tema" title="Ganti tema">☾</button></div>
+  </header>
+  <main class="page">
+    <div class="page-heading"><div><p class="eyebrow">Ruang kerja / Ringkasan</p><h1>Semua pekerjaan, satu tempat.</h1><p>Kelola proyek dan selesaikan tugas selangkah demi selangkah.</p></div><button class="button primary" data-action="add-project" type="button"><span aria-hidden="true">＋</span> Proyek baru</button></div>
+    <section aria-label="Ringkasan pekerjaan"><div id="stats" class="stats"></div></section>
+    <div class="workspace">
+      <aside class="projects panel" aria-labelledby="project-heading"><div class="panel-header"><div><h2 id="project-heading">Proyek</h2><p>Kelompokkan pekerjaanmu</p></div><button class="icon-button" data-action="add-project" aria-label="Tambah proyek" type="button">＋</button></div><div id="project-list"></div></aside>
+      <section class="tasks" aria-labelledby="current-project"><div class="board-heading"><div><p class="eyebrow">Papan tugas</p><h2 id="current-project">Semua tugas</h2><p>Pantau progres pekerjaanmu di sini.</p></div><button class="button primary" data-action="add-task" type="button">＋ Tambah tugas</button></div>
+        <div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><span class="sr-only">Cari tugas</span><input id="search" type="search" placeholder="Cari judul atau deskripsi tugas..."></label><label><span class="sr-only">Filter status</span><select id="status-filter"><option value="ALL">Semua status</option><option value="To-do">To-do</option><option value="In-Progress">In-Progress</option><option value="Done">Done</option></select></label></div>
+        <div id="board" class="board"></div>
+      </section>
+    </div>
+    <footer>TaskFlow <span>·</span> Fokus pada langkah berikutnya.</footer>
+  </main>
+  <dialog id="project-dialog"><form id="project-form"><div class="dialog-header"><div><h2>Proyek baru</h2><p>Buat ruang untuk pekerjaanmu.</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Tutup">×</button></div><label>Nama proyek<input name="name" required maxlength="100" placeholder="Contoh: Acara kampus"></label><label>Deskripsi<textarea name="description" maxlength="500" rows="3" placeholder="Apa yang ingin kamu capai?"></textarea></label><label>Tenggat proyek<input name="deadline" type="date"></label><div class="dialog-actions"><button type="button" class="button secondary" data-action="close-dialog">Batal</button><button class="button primary" type="submit">Simpan proyek</button></div></form></dialog>
+  <dialog id="task-dialog"><form id="task-form"><div class="dialog-header"><div><h2>Tugas baru</h2><p>Mulai dari satu langkah kecil.</p></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Tutup">×</button></div><label>Proyek<select name="projectId" required></select></label><label>Judul tugas<input name="title" required maxlength="100" placeholder="Apa yang perlu dikerjakan?"></label><label>Deskripsi<textarea name="description" maxlength="500" rows="3" placeholder="Tambahkan detail jika diperlukan"></textarea></label><div class="form-row"><label>Tenggat<input name="deadline" type="date"></label><label>Status<select name="status"><option>To-do</option><option>In-Progress</option><option>Done</option></select></label></div><div class="dialog-actions"><button type="button" class="button secondary" data-action="close-dialog">Batal</button><button class="button primary" type="submit">Simpan tugas</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

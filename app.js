@@ -1,0 +1,217 @@
+const $ = (selector) => document.querySelector(selector);
+const projectList = $('#project-list');
+const board = $('#board');
+const stats = $('#stats');
+const projectForm = $('#project-form');
+const taskForm = $('#task-form');
+const projectDialog = $('#project-dialog');
+const taskDialog = $('#task-dialog');
+const search = $('#search');
+const statusFilter = $('#status-filter');
+const themeToggle = $('#theme-toggle');
+const toast = $('#toast');
+const currentProject = $('#current-project');
+const statuses = ['To-do', 'In-Progress', 'Done'];
+let selectedProject = null;
+let editingProject = null;
+let editingTask = null;
+let toastTimer;
+
+function load(key) {
+  try {
+    const data = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+let projects = load('tf_projects');
+let tasks = load('tf_tasks');
+
+function notify(message) {
+  toast.textContent = message;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 3200);
+}
+function save() {
+  try {
+    localStorage.setItem('tf_projects', JSON.stringify(projects));
+    localStorage.setItem('tf_tasks', JSON.stringify(tasks));
+    return true;
+  } catch {
+    notify('Penyimpanan tidak tersedia. Perubahan mungkin tidak tersimpan.');
+    return false;
+  }
+}
+function make(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function action(label, name, id, className = '') {
+  const button = make('button', className, label);
+  button.type = 'button';
+  button.dataset.action = name;
+  if (id) button.dataset.id = id;
+  return button;
+}
+function formValue(form, name) { return form.elements.namedItem(name).value.trim(); }
+function setValue(form, name, value) { form.elements.namedItem(name).value = value || ''; }
+function dateLabel(value) {
+  if (!value) return 'Tanpa tenggat';
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+}
+function renderStats() {
+  stats.replaceChildren();
+  const entries = [['Total proyek', projects.length], ...statuses.map((status) => [status, tasks.filter((task) => task.status === status).length])];
+  for (const [label, count] of entries) {
+    const card = make('div', 'stat-card');
+    card.append(make('span', 'stat-label', label), make('strong', 'stat-value', String(count)));
+    stats.append(card);
+  }
+}
+function renderProjects() {
+  projectList.replaceChildren();
+  const all = action('Semua proyek', 'select-project', '', 'project-button');
+  all.setAttribute('aria-pressed', String(selectedProject === null));
+  projectList.append(all);
+  for (const project of projects) {
+    const item = make('div', 'project-item');
+    const select = action(project.name, 'select-project', project.id, 'project-button');
+    select.setAttribute('aria-pressed', String(selectedProject === project.id));
+    const count = tasks.filter((task) => task.projectId === project.id);
+    const meta = make('span', 'project-meta', `${count.filter((task) => task.status === 'Done').length}/${count.length} selesai`);
+    const buttons = make('div', 'project-actions');
+    buttons.append(action('Ubah', 'edit-project', project.id), action('Hapus', 'delete-project', project.id));
+    item.append(select, meta, buttons);
+    projectList.append(item);
+  }
+  if (!projects.length) projectList.append(make('p', 'empty-state', 'Belum ada proyek. Tambahkan proyek pertamamu.'));
+  currentProject.textContent = projects.find((p) => p.id === selectedProject)?.name || 'Semua proyek';
+}
+function renderBoard() {
+  const query = search.value.trim().toLocaleLowerCase('id');
+  const visible = tasks.filter((task) => (!selectedProject || task.projectId === selectedProject) && (statusFilter.value === 'ALL' || !statusFilter.value || task.status === statusFilter.value) && `${task.title} ${task.description || ''}`.toLocaleLowerCase('id').includes(query));
+  board.replaceChildren();
+  for (const status of statuses) {
+    const column = make('section', 'kanban-column');
+    const matching = visible.filter((task) => task.status === status);
+    const header = make('div', 'kanban-header');
+    header.append(make('h3', '', status), make('span', 'count-badge', String(matching.length)));
+    column.append(header);
+    if (!matching.length) column.append(make('p', 'empty-state', 'Belum ada tugas di sini.'));
+    for (const task of matching) {
+      const card = make('article', 'task-card');
+      card.append(make('h4', '', task.title));
+      if (task.description) card.append(make('p', 'task-description', task.description));
+      const project = projects.find((p) => p.id === task.projectId);
+      card.append(make('p', 'task-meta', `${project?.name || 'Proyek'} · ${dateLabel(task.deadline)}`));
+      const controls = make('div', 'task-actions');
+      const move = make('select', 'task-status');
+      move.dataset.action = 'move-task';
+      move.dataset.id = task.id;
+      move.setAttribute('aria-label', `Ubah status ${task.title}`);
+      for (const optionStatus of statuses) {
+        const option = make('option', '', optionStatus);
+        option.value = optionStatus;
+        option.selected = optionStatus === task.status;
+        move.append(option);
+      }
+      controls.append(move, action('Ubah', 'edit-task', task.id), action('Hapus', 'delete-task', task.id));
+      card.append(controls);
+      column.append(card);
+    }
+    board.append(column);
+  }
+}
+function render() { renderStats(); renderProjects(); renderBoard(); }
+
+function openProject(project = null) {
+  editingProject = project?.id || null;
+  projectForm.reset();
+  projectForm.querySelector('h2').textContent = project ? 'Ubah proyek' : 'Proyek baru';
+  if (project) for (const key of ['name', 'description', 'deadline']) setValue(projectForm, key, project[key]);
+  projectDialog.showModal();
+}
+function openTask(task = null) {
+  if (!projects.length) { notify('Tambahkan proyek sebelum membuat tugas.'); return; }
+  editingTask = task?.id || null;
+  taskForm.reset();
+  taskForm.querySelector('h2').textContent = task ? 'Ubah tugas' : 'Tugas baru';
+  const projectSelect = taskForm.elements.namedItem('projectId');
+  projectSelect.replaceChildren();
+  for (const project of projects) {
+    const option = make('option', '', project.name);
+    option.value = project.id;
+    projectSelect.append(option);
+  }
+  projectSelect.value = task?.projectId || selectedProject || projects[0].id;
+  if (task) for (const key of ['title', 'description', 'deadline', 'status']) setValue(taskForm, key, task[key]);
+  taskDialog.showModal();
+}
+projectForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const name = formValue(projectForm, 'name');
+  if (!name) { notify('Nama proyek wajib diisi.'); return; }
+  const values = { name, description: formValue(projectForm, 'description'), deadline: formValue(projectForm, 'deadline') };
+  if (editingProject) Object.assign(projects.find((p) => p.id === editingProject), values);
+  else { const project = { id: crypto.randomUUID(), ...values, status: 'Aktif' }; projects.push(project); selectedProject = project.id; }
+  const persisted = save(); render(); projectDialog.close();
+  if (persisted) notify(editingProject ? 'Proyek diperbarui.' : 'Proyek ditambahkan.');
+});
+taskForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const title = formValue(taskForm, 'title');
+  const status = formValue(taskForm, 'status');
+  if (!title || !statuses.includes(status)) { notify('Isi judul dan pilih status tugas.'); return; }
+  const projectId = formValue(taskForm, 'projectId');
+  if (!projects.some((project) => project.id === projectId)) { notify('Pilih proyek yang tersedia.'); return; }
+  const values = { projectId, title, description: formValue(taskForm, 'description'), deadline: formValue(taskForm, 'deadline'), status };
+  if (editingTask) Object.assign(tasks.find((t) => t.id === editingTask), values);
+  else tasks.push({ id: crypto.randomUUID(), ...values });
+  const persisted = save(); render(); taskDialog.close();
+  if (persisted) notify(editingTask ? 'Tugas diperbarui.' : 'Tugas ditambahkan.');
+});
+document.addEventListener('click', (event) => {
+  const target = event.target.closest('[data-action]');
+  if (!target || target.tagName === 'SELECT') return;
+  const id = target.dataset.id;
+  switch (target.dataset.action) {
+    case 'add-project': openProject(); break;
+    case 'add-task': openTask(); break;
+    case 'close-dialog': target.closest('dialog')?.close(); break;
+    case 'select-project': selectedProject = id || null; render(); break;
+    case 'edit-project': { const project = projects.find((p) => p.id === id); if (project) openProject(project); break; }
+    case 'edit-task': { const task = tasks.find((t) => t.id === id); if (task) openTask(task); break; }
+    case 'delete-project':
+      if (confirm('Hapus proyek dan semua tugas di dalamnya?')) { projects = projects.filter((p) => p.id !== id); tasks = tasks.filter((t) => t.projectId !== id); if (selectedProject === id) selectedProject = null; const persisted = save(); render(); if (persisted) notify('Proyek dihapus.'); }
+      break;
+    case 'delete-task':
+      if (confirm('Hapus tugas ini?')) { tasks = tasks.filter((t) => t.id !== id); const persisted = save(); render(); if (persisted) notify('Tugas dihapus.'); }
+      break;
+  }
+});
+document.addEventListener('change', (event) => {
+  if (event.target.dataset.action !== 'move-task') return;
+  const task = tasks.find((item) => item.id === event.target.dataset.id);
+  if (task && statuses.includes(event.target.value)) { task.status = event.target.value; const persisted = save(); render(); if (persisted) notify('Status tugas diperbarui.'); }
+});
+search.addEventListener('input', renderBoard);
+statusFilter.addEventListener('change', renderBoard);
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Aktifkan mode terang' : 'Aktifkan mode gelap');
+  themeToggle.textContent = theme === 'dark' ? '☀' : '☾';
+}
+let savedTheme = 'light';
+try { savedTheme = localStorage.getItem('tf_theme') === 'dark' ? 'dark' : 'light'; } catch { /* Use light mode when storage is unavailable. */ }
+setTheme(savedTheme);
+themeToggle.addEventListener('click', () => {
+  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  setTheme(theme);
+  try { localStorage.setItem('tf_theme', theme); } catch { notify('Preferensi tema tidak dapat disimpan.'); }
+});
+render();
