@@ -12,6 +12,13 @@ const themeToggle = $('#theme-toggle');
 const toast = $('#toast');
 const currentProject = $('#current-project');
 const statuses = ['To-do', 'In-Progress', 'Done'];
+// Lucide icons, ISC licensed; see assets/lucide/LICENSE.
+const statIcons = [
+  '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  '<path d="M10.1 2.182a10 10 0 0 1 3.8 0M13.9 21.818a10 10 0 0 1-3.8 0M17.609 3.721a10 10 0 0 1 2.69 2.7M2.182 13.9a10 10 0 0 1 0-3.8M20.279 17.609a10 10 0 0 1-2.7 2.69M21.818 10.1a10 10 0 0 1 0 3.8M3.721 6.391a10 10 0 0 1 2.7-2.69M6.391 20.279a10 10 0 0 1-2.69-2.7"/>',
+  '<circle cx="12" cy="12" r="10"/><path d="M12 6v6h4"/>',
+  '<circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/>'
+];
 let selectedProject = null;
 let editingProject = null;
 let editingTask = null;
@@ -71,7 +78,10 @@ function renderStats() {
   for (const [index, [label, count]] of entries.entries()) {
     const card = make('div', 'stat-card');
     card.dataset.stat = ['projects', 'todo', 'progress', 'done'][index];
-    card.append(make('span', 'stat-label', label), make('strong', 'stat-value', String(count)));
+    const icon = make('span', 'stat-icon');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${statIcons[index]}</svg>`;
+    card.append(make('span', 'stat-label', label), make('strong', 'stat-value', String(count)), icon);
     stats.append(card);
   }
 }
