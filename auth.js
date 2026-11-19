@@ -42,6 +42,9 @@ window.TaskFlowAuth = (() => {
     form.elements.name.closest('label').hidden = !register;
     form.elements.name.required = register;
     form.elements.password.autocomplete = register ? 'new-password' : 'current-password';
+    form.elements.password.type = 'password';
+    form.querySelector('.password-toggle').textContent = 'Tampilkan';
+    form.querySelector('.password-toggle').setAttribute('aria-label', 'Tampilkan kata sandi');
     form.querySelector('button[type="submit"]').textContent = register ? 'Buat akun' : 'Masuk';
     message.textContent = '';
   }
@@ -100,7 +103,7 @@ window.TaskFlowAuth = (() => {
       <h1 id="auth-title">Ruang untuk hal yang berarti.</h1>
       <p class="auth-intro">Kelola proyek dan tugasmu dengan lebih terarah.</p>
       <div class="auth-tabs" role="tablist" aria-label="Pilihan akun"><button type="button" role="tab" id="auth-login-tab">Masuk</button><button type="button" role="tab" id="auth-register-tab">Daftar</button></div>
-      <form id="auth-form"><label>Nama lengkap<input name="name" autocomplete="name" maxlength="100" placeholder="Nama lengkap"></label><label>Email<input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="nama@email.com"></label><label>Kata sandi<input name="password" type="password" autocomplete="current-password" required minlength="6" maxlength="1024" placeholder="Minimal 6 karakter"></label><p class="auth-error" role="alert"></p><button class="button primary auth-submit" type="submit">Masuk</button></form>
+      <form id="auth-form"><label>Nama lengkap<input name="name" autocomplete="name" maxlength="100" placeholder="Nama lengkap"></label><label>Email<input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="nama@email.com"></label><div class="password-field"><label for="auth-password">Kata sandi</label><div class="password-control"><input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="6" maxlength="1024" placeholder="Minimal 6 karakter"><button class="password-toggle" type="button" aria-label="Tampilkan kata sandi" aria-controls="auth-password">Tampilkan</button></div></div><p class="auth-error" role="alert"></p><button class="button primary auth-submit" type="submit">Masuk</button></form>
       <p class="auth-disclaimer">Akun dan data disimpan hanya di browser ini. Akun lokal tidak melindungi data dari pengguna lain pada perangkat yang sama.</p>
     </section>`;
     document.body.append(view);
@@ -114,6 +117,12 @@ window.TaskFlowAuth = (() => {
     document.querySelector('.header-actions').append(account);
     loginTab.addEventListener('click', () => setMode(false));
     registerTab.addEventListener('click', () => setMode(true));
+    form.querySelector('.password-toggle').addEventListener('click', (event) => {
+      const visible = form.elements.password.type === 'password';
+      form.elements.password.type = visible ? 'text' : 'password';
+      event.currentTarget.textContent = visible ? 'Sembunyikan' : 'Tampilkan';
+      event.currentTarget.setAttribute('aria-label', `${visible ? 'Sembunyikan' : 'Tampilkan'} kata sandi`);
+    });
     account.querySelector('button').addEventListener('click', () => {
       try { localStorage.removeItem(sessionKey); showSession(null); } catch { message.textContent = 'Tidak dapat keluar. Periksa penyimpanan browser.'; }
     });
