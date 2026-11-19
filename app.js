@@ -33,6 +33,9 @@ function setIsland(open) {
   islandToggle.setAttribute('aria-label', open ? 'Tutup navigasi cepat' : 'Buka navigasi cepat');
 }
 islandToggle.addEventListener('click', () => setIsland(islandMenu.hidden));
+$('.island').addEventListener('focusout', (event) => {
+  if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setIsland(false);
+});
 profileDialog.addEventListener('close', () => {
   if (!document.body.classList.contains('auth-locked')) islandToggle.focus({ preventScroll: true });
 });
