@@ -2,3 +2,32 @@
 :root .stat-value{display:block;line-height:1.15}.project-button{display:block;width:100%;text-align:left;background:transparent;color:var(--secondary);border:0;border-radius:8px;padding:10px;font-weight:600}.project-button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent)}.project-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 6px;padding:3px 0;border-bottom:1px solid var(--border)}.project-item .project-button{grid-column:1/-1}.project-meta{font-size:11px;color:var(--muted);padding:5px 10px}.project-actions{display:flex}.project-actions button,.task-actions button{font-size:12px}.kanban-header{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}.kanban-header h3{margin:0;font-size:13px}.count-badge{color:var(--secondary);font-size:12px;border-radius:6px;background:var(--surface);padding:2px 7px}.empty-state{padding:16px 10px;border:1px dashed var(--border);border-radius:8px;text-align:center;color:var(--muted);font-size:12px}.task-actions{flex-wrap:wrap}.task-actions .task-status{flex:1;min-width:110px}.toast[hidden]{display:none}
 :root .urgent{margin:-8px 0 24px;padding:14px 18px;border:1px solid #d9770655;border-left:3px solid #d97706;border-radius:8px;background:var(--surface);color:var(--text)}.urgent[hidden]{display:none}.urgent ul{margin:6px 0 0;padding-left:20px;color:var(--secondary);font-size:13px}.help-text{font-size:12px;font-weight:400;color:var(--muted)}.task-card .attachment-link{display:block;max-width:100%;overflow-wrap:anywhere;text-align:left;color:var(--accent);font-size:12px;padding:4px 0 10px}
 .legacy-import{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:-8px 0 24px;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.legacy-import[hidden]{display:none}@media(max-width:640px){.legacy-import{align-items:flex-start;flex-direction:column}}
+:root{--todo:#a45309;--progress:#036990;--done:#137a3d;--danger:#b42318;--focus:#1d4ed8}
+[data-theme=dark]{--todo:#fbbf24;--progress:#7dd3fc;--done:#86efac;--danger:#fca5a5;--focus:#93c5fd}
+body{font-size:15px}
+.page{padding-top:36px}
+.page-heading h1{max-width:26ch;text-wrap:balance}
+.stat-card{position:relative;overflow:hidden;min-height:112px;padding:18px 20px 18px 24px}
+.stat-card::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;border-radius:4px;background:var(--accent)}
+.stat-card[data-stat=todo]::before{background:var(--todo)}
+.stat-card[data-stat=progress]::before{background:var(--progress)}
+.stat-card[data-stat=done]::before{background:var(--done)}
+.stat-label{font-size:13px;font-weight:600}.stat-value{font-size:28px}
+.projects{position:relative}.panel-header{margin-bottom:14px}
+.project-item{padding:6px 0 12px;gap:2px 8px}.project-meta{font-size:12px}
+.project-progress{grid-column:1/-1;width:calc(100% - 20px);height:5px;margin:0 10px;border:0;appearance:none;overflow:hidden;border-radius:99px;background:var(--subtle)}
+.project-progress::-webkit-progress-bar{background:var(--subtle)}.project-progress::-webkit-progress-value{background:var(--accent);border-radius:99px}.project-progress::-moz-progress-bar{background:var(--accent);border-radius:99px}
+.project-actions{gap:4px}.project-actions button,.task-actions button{min-height:40px;padding:8px;font-size:12px;font-weight:600;border-radius:6px;color:var(--secondary)}
+.project-actions button:hover,.task-actions button:hover{background:var(--subtle);color:var(--text)}
+.project-actions button[data-action=delete-project],.task-actions button[data-action=delete-task]{color:var(--danger)}
+.project-button{min-height:44px}.empty-state{line-height:1.5}.empty-state strong{display:block;color:var(--text);font-size:13px}.empty-state p{margin:5px 0 10px}.empty-action{border:0;background:transparent;color:var(--accent);font-weight:700;min-height:40px;padding:4px 8px}
+.kanban-column{padding:14px;min-height:240px}.kanban-header{gap:8px;padding:3px 0 14px;border-bottom:1px solid var(--border)}.kanban-header h3{display:flex;align-items:center;gap:8px;font-size:13px}.kanban-header h3::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.kanban-column[data-status=todo] h3::before{background:var(--todo)}.kanban-column[data-status=progress] h3::before{background:var(--progress)}.kanban-column[data-status=done] h3::before{background:var(--done)}
+.count-badge{min-width:26px;text-align:center;font-weight:650}.task-card{padding:16px;margin-bottom:12px}.task-card h4{font-size:15px;line-height:1.4}.task-card p{font-size:13px;line-height:1.5}.task-card .task-meta{color:var(--muted);padding-top:10px;margin:12px 0;border-top:1px solid var(--border)}.task-actions{gap:4px}.task-actions .task-status{min-height:40px}.task-card .attachment-link{min-height:40px}
+.button,.icon-button{min-height:44px}.icon-button{min-width:44px}.button,.icon-button,.project-button,.project-actions button,.task-actions button,.empty-action{transition:background-color .16s ease,color .16s ease,border-color .16s ease,filter .16s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-color:var(--focus)}.search:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+dialog{max-height:calc(100dvh - 32px);overflow-y:auto}dialog label{font-size:14px}dialog input,dialog select,dialog textarea{width:100%;min-height:44px}dialog textarea{resize:vertical}
+@media(max-width:960px){.kanban-column{min-height:120px}}
+@media(max-width:640px){.page{padding-top:24px}.page-heading,.board-heading{gap:16px}.page-heading .button,.board-heading .button{width:100%}.stats{margin:24px 0}.stat-card{min-height:100px;padding:16px 16px 16px 20px}.projects{padding:16px}.workspace{gap:28px}.task-actions{gap:6px}.project-actions button,.task-actions button{min-height:44px}.toast{left:16px;right:16px;bottom:16px}.form-row{grid-template-columns:1fr}}
+[data-theme=dark] .eyebrow,[data-theme=dark] .project-button[aria-pressed=true],[data-theme=dark] .empty-action,[data-theme=dark] .task-card .attachment-link{color:#bfdbfe!important}
+.primary{background:#1d4ed8}
