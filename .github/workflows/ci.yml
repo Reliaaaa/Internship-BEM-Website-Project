@@ -18,5 +18,6 @@ jobs:
           node --check auth.js
           node --check attachments.js
           node --check smooth-scroll.js
+          node --check scrollbar.js
       - name: Uji batas lampiran
         run: node --test tests/*.test.cjs

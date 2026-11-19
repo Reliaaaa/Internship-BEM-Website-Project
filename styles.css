@@ -57,3 +57,5 @@ body{isolation:isolate}
 body::before{content:"";position:fixed;inset:-15%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 16% 14%,rgba(37,99,235,.09),transparent 33%),radial-gradient(ellipse at 84% 70%,rgba(14,165,233,.08),transparent 34%)}
 [data-theme=dark] body::before{background:radial-gradient(ellipse at 16% 14%,rgba(59,130,246,.13),transparent 33%),radial-gradient(ellipse at 84% 70%,rgba(14,165,233,.09),transparent 34%)}
 @media(prefers-reduced-motion:no-preference){body::before{animation:background-drift 20s ease-in-out infinite alternate}@keyframes background-drift{from{transform:translate3d(-2%,-1%,0)}to{transform:translate3d(2%,2%,0)}}}
+.os-theme-taskflow{--os-size:12px;--os-padding-perpendicular:3px;--os-padding-axis:3px;--os-track-border-radius:999px;--os-track-bg:transparent;--os-handle-border-radius:999px;--os-handle-bg:rgba(37,99,165,.5);--os-handle-bg-hover:rgba(37,99,165,.78);--os-handle-bg-active:#2563eb;--os-handle-min-size:42px;--os-handle-interactive-area-offset:5px}
+[data-theme=dark] .os-theme-taskflow{--os-handle-bg:rgba(147,197,253,.55);--os-handle-bg-hover:rgba(191,219,254,.85);--os-handle-bg-active:#bfdbfe}
