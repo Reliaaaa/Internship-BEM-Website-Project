@@ -106,7 +106,33 @@ function renderProjects() {
     empty.append(make('strong', '', 'Mulai proyek pertama'), make('p', '', 'Buat proyek untuk mengelompokkan tugasmu.'), action('Tambah proyek', 'add-project', '', 'empty-action'));
     projectList.append(empty);
   }
-  currentProject.textContent = projects.find((p) => p.id === selectedProject)?.name || 'Semua proyek';
+  const current = projects.find((p) => p.id === selectedProject);
+  currentProject.textContent = current ? `Tugas · ${current.name}` : 'Semua tugas';
+  const overview = $('#project-overview');
+  const grid = $('#project-grid');
+  overview.hidden = Boolean(selectedProject);
+  grid.replaceChildren();
+  if (!projects.length) {
+    const empty = make('div', 'empty-state overview-empty');
+    empty.append(make('strong', '', 'Belum ada proyek'), make('p', '', 'Buat proyek pertama untuk mulai mengatur tugas.'), action('Tambah proyek', 'add-project', '', 'empty-action'));
+    grid.append(empty);
+  }
+  for (const project of projects) {
+    const projectTasks = tasks.filter((task) => task.projectId === project.id);
+    const completed = projectTasks.filter((task) => task.status === 'Done').length;
+    const percentage = projectTasks.length ? Math.round(completed / projectTasks.length * 100) : 0;
+    const card = action('', 'select-project', project.id, 'overview-card');
+    const heading = make('div', 'overview-card-heading');
+    heading.append(make('strong', 'overview-name', project.name), make('span', 'overview-status', project.status || 'Aktif'));
+    const description = make('p', 'overview-description', project.description || 'Belum ada deskripsi proyek.');
+    const meta = make('div', 'overview-meta');
+    meta.append(make('span', '', `${completed}/${projectTasks.length} tugas selesai`), make('span', '', `${percentage}%`));
+    const progress = document.createElement('progress');
+    progress.className = 'overview-progress'; progress.max = 100; progress.value = percentage;
+    progress.setAttribute('aria-label', `Progres ${project.name}: ${percentage}%`);
+    card.append(heading, description, meta, progress, make('span', 'overview-date', dateLabel(project.deadline)));
+    grid.append(card);
+  }
 }
 function renderBoard() {
   const query = search.value.trim().toLocaleLowerCase('id');
