@@ -4,3 +4,4 @@
 [data-theme=dark] .password-toggle,[data-theme=dark] .auth-tabs button[aria-selected=true]{color:#bfdbfe}[data-theme=dark] .auth-error{color:#fca5a5}
 .auth-view{background:transparent}
 .auth-locked > .island{display:none}
+[data-theme=dark] .password-toggle,[data-theme=dark] .auth-tabs button[aria-selected=true]{color:#b1f3df}
