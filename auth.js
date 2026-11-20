@@ -14,6 +14,7 @@ window.TaskFlowAuth = (() => {
   let current = null;
   let registerMode = false;
   let busy = false;
+  let modeAnimation;
 
   function readUsers() {
     const raw = localStorage.getItem(usersKey);
@@ -35,7 +36,11 @@ window.TaskFlowAuth = (() => {
     const user = readUsers().find((item) => item.id === saved.userId);
     return user ? userInfo(user) : null;
   }
-  function setMode(register) {
+  function setMode(register, animate = false) {
+    if (animate && register === registerMode) return;
+    const card = view.querySelector('.auth-card');
+    const previousHeight = card.getBoundingClientRect().height;
+    modeAnimation?.cancel();
     registerMode = register;
     loginTab.setAttribute('aria-selected', String(!register));
     registerTab.setAttribute('aria-selected', String(register));
@@ -47,6 +52,10 @@ window.TaskFlowAuth = (() => {
     form.querySelector('.password-toggle').setAttribute('aria-label', 'Tampilkan kata sandi');
     form.querySelector('button[type="submit"]').textContent = register ? 'Buat akun' : 'Masuk';
     message.textContent = '';
+    if (animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      modeAnimation = card.animate([{ height: `${previousHeight}px` }, { height: `${card.offsetHeight}px` }], { duration: 300, easing: 'cubic-bezier(.22,1,.36,1)' });
+      form.animate([{ opacity: 0.65, transform: `translateY(${register ? 8 : -8}px)` }, { opacity: 1, transform: 'translateY(0)' }], { duration: 280, easing: 'cubic-bezier(.22,1,.36,1)' });
+    }
   }
   function showSession(user) {
     current = user;
@@ -118,8 +127,8 @@ window.TaskFlowAuth = (() => {
     account.className = 'auth-account';
     account.innerHTML = '<span class="auth-user"></span><button class="button logout-button" data-action="logout" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg><span>Keluar</span></button>';
     document.querySelector('.header-actions').append(account);
-    loginTab.addEventListener('click', () => setMode(false));
-    registerTab.addEventListener('click', () => setMode(true));
+    loginTab.addEventListener('click', () => setMode(false, true));
+    registerTab.addEventListener('click', () => setMode(true, true));
     form.querySelector('.password-toggle').addEventListener('click', (event) => {
       const visible = form.elements.password.type === 'password';
       form.elements.password.type = visible ? 'text' : 'password';

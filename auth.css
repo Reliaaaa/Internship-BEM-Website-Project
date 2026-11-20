@@ -5,3 +5,7 @@
 .auth-view{background:transparent}
 .auth-locked > .island{display:none}
 [data-theme=dark] .password-toggle,[data-theme=dark] .auth-tabs button[aria-selected=true]{color:#b1f3df}
+
+/* A sliding selection keeps the two account modes visually connected. */
+.auth-tabs{position:relative;isolation:isolate}.auth-tabs::before{content:"";position:absolute;z-index:-1;inset:4px auto 4px 4px;width:calc(50% - 4px);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}.auth-tabs:has(#auth-register-tab[aria-selected=true])::before{transform:translateX(100%)}.auth-tabs button[aria-selected=true]{background:transparent;box-shadow:none}
+@media(prefers-reduced-motion:no-preference){.auth-tabs::before{transition:transform .3s cubic-bezier(.22,1,.36,1)}.auth-tabs button{transition:color .2s ease}}
