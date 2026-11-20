@@ -64,6 +64,7 @@ async function selectProject(id) {
   const token = projectTransition;
   const panel = $('.tasks');
   const restoreFocus = document.activeElement?.dataset.action === 'select-project';
+  const fromOverview = document.activeElement?.classList.contains('overview-card');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduced && panel.animate) {
     projectAnimation = panel.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0.2, transform: 'translateY(6px)' }], { duration: 120, easing: 'ease-in', fill: 'forwards' });
@@ -72,7 +73,8 @@ async function selectProject(id) {
   }
   selectedProject = id;
   render();
-  if (restoreFocus) [...projectList.querySelectorAll('[data-action="select-project"]')].find((button) => (button.dataset.id || null) === id)?.focus({ preventScroll: true });
+  if (fromOverview) currentProject.focus({ preventScroll: true });
+  else if (restoreFocus) [...projectList.querySelectorAll('[data-action="select-project"]')].find((button) => (button.dataset.id || null) === id)?.focus({ preventScroll: true });
   projectAnimation?.cancel();
   projectAnimation = undefined;
   if (!reduced && panel.animate) {
@@ -178,6 +180,7 @@ function renderProjects() {
   currentProject.textContent = current ? `Tugas · ${current.name}` : 'Semua tugas';
   const overview = $('#project-overview');
   const grid = $('#project-grid');
+  $('#overview-count').textContent = `${projects.length} proyek`;
   overview.hidden = Boolean(selectedProject);
   grid.replaceChildren();
   if (!projects.length) {
@@ -185,20 +188,36 @@ function renderProjects() {
     empty.append(make('strong', '', 'Belum ada proyek'), make('p', '', 'Buat proyek pertama untuk mulai mengatur tugas.'), action('Tambah proyek', 'add-project', '', 'empty-action'));
     grid.append(empty);
   }
+  if (projects.length) {
+    const header = make('div', 'overview-list-header');
+    header.setAttribute('aria-hidden', 'true');
+    for (const label of ['Proyek', 'Status', 'Progres', 'Tenggat']) header.append(make('span', '', label));
+    grid.append(header);
+  }
   for (const project of projects) {
     const projectTasks = tasks.filter((task) => task.projectId === project.id);
     const completed = projectTasks.filter((task) => task.status === 'Done').length;
     const percentage = projectTasks.length ? Math.round(completed / projectTasks.length * 100) : 0;
     const card = action('', 'select-project', project.id, 'overview-card');
-    const heading = make('div', 'overview-card-heading');
-    heading.append(make('strong', 'overview-name', project.name), make('span', 'overview-status', project.status || 'Aktif'));
-    const description = make('p', 'overview-description', project.description || 'Belum ada deskripsi proyek.');
-    const meta = make('div', 'overview-meta');
-    meta.append(make('span', '', `${completed}/${projectTasks.length} tugas selesai`), make('span', '', `${percentage}%`));
+    const projectStatus = project.status || 'Aktif';
+    const name = make('span', 'overview-identity');
+    const icon = make('span', 'overview-project-icon');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${statIcons[0]}</svg>`;
+    const text = make('span', 'overview-text');
+    text.append(make('strong', 'overview-name', project.name), make('span', 'overview-description', project.description || 'Belum ada deskripsi proyek.'));
+    name.append(icon, text);
+    const status = make('span', 'overview-status', projectStatus);
+    status.dataset.status = projectStatus;
+    const meta = make('span', 'overview-meta');
+    const progressLabel = make('span', 'overview-progress-label');
+    progressLabel.append(make('span', '', `${completed}/${projectTasks.length} tugas`), make('span', '', `${percentage}%`));
     const progress = document.createElement('progress');
     progress.className = 'overview-progress'; progress.max = 100; progress.value = percentage;
-    progress.setAttribute('aria-label', `Progres ${project.name}: ${percentage}%`);
-    card.append(heading, description, meta, progress, make('span', 'overview-date', dateLabel(project.deadline)));
+    progress.setAttribute('aria-hidden', 'true');
+    meta.append(progressLabel, progress);
+    card.setAttribute('aria-label', `${project.name}${project.description ? `, ${project.description}` : ''}, ${projectStatus}, ${completed} dari ${projectTasks.length} tugas selesai, ${percentage} persen, ${dateLabel(project.deadline)}. Buka proyek.`);
+    card.append(name, status, meta, make('span', 'overview-date', dateLabel(project.deadline)));
     grid.append(card);
   }
 }
