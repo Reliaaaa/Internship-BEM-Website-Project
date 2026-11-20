@@ -101,3 +101,6 @@ body::before,[data-theme=dark] body::before{background:radial-gradient(ellipse a
 [data-theme=dark] .overview-progress::-webkit-progress-value,[data-theme=dark] .project-progress::-webkit-progress-value{background:#64d7c1}
 [data-theme=dark] .overview-progress::-moz-progress-bar,[data-theme=dark] .project-progress::-moz-progress-bar{background:#64d7c1}
 [data-theme=dark] .os-theme-taskflow{--os-handle-bg:rgba(145,239,218,.55);--os-handle-bg-hover:rgba(177,243,223,.85);--os-handle-bg-active:#b1f3df}
+
+/* Subtle press feedback complements smooth navigation on touch and desktop. */
+@media(prefers-reduced-motion:no-preference){.project-button,.overview-card,.island-menu button{transition:background-color .2s ease,color .2s ease,transform .22s cubic-bezier(.22,1,.36,1)}.button:active,.icon-button:active,.project-button:active,.overview-card:active,.island-menu button:active{transform:scale(.97)}}
