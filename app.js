@@ -12,6 +12,7 @@ const themeToggle = $('#theme-toggle');
 const toast = $('#toast');
 const currentProject = $('#current-project');
 const profileDialog = $('#profile-dialog');
+const logoutDialog = $('#logout-dialog');
 const islandToggle = $('.island-toggle');
 const islandMenu = $('#island-menu');
 const statuses = ['To-do', 'In-Progress', 'Done'];
@@ -363,7 +364,10 @@ document.addEventListener('click', async (event) => {
       break;
     }
     case 'close-dialog': target.closest('dialog')?.close(); break;
-    case 'logout': if (!TaskFlowAuth.logout()) notify('Tidak dapat keluar. Periksa penyimpanan browser.'); break;
+    case 'logout': logoutDialog.showModal(); break;
+    case 'confirm-logout':
+      if (!TaskFlowAuth.logout()) { logoutDialog.close(); notify('Tidak dapat keluar. Periksa penyimpanan browser.'); }
+      break;
     case 'select-project': await selectProject(id || null); break;
     case 'navigate-projects': cancelProjectTransition(); selectedProject = null; render(); navigateTo($('#overview-heading')); break;
     case 'navigate-tasks': navigateTo(currentProject); break;
@@ -423,6 +427,7 @@ TaskFlowAuth.start((user) => {
   cancelProjectTransition();
   if (projectDialog.open) projectDialog.close();
   if (taskDialog.open) taskDialog.close();
+  if (logoutDialog.open) logoutDialog.close();
   if (profileDialog.open) profileDialog.close();
   setIsland(false);
   activeUser = user;
